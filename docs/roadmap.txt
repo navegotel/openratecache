@@ -1,0 +1,84 @@
+# Roadmap #
+
+AddRateBlockToFile DONE
+
+
+GetRateBlockOffset DONE
+
+
+UnpackRate: 
+    Split Value into rate and availability DONE
+
+
+PackRate: 
+    Join rate and avail into one uint32 DONE
+
+
+GetValueFromRateBlock:
+    return rate avail and err DONE
+    
+
+SetValueInRateBlock:
+    Accept rate, avail and return err DONE
+
+
+WriteIdx DONE
+
+
+ReadIdx
+    Read idx from file into a slice of RoomRate objects DONE
+
+
+GetValuesFromRateBlock:
+    return a list of values for a date range.
+    Pack values if possible.
+
+SetValuesInRateBlock
+    Accept list of rate and avail and return err
+    
+GetIdx 
+    GetIDX based on AccoCode, RoomRateCode and Occupancy
+    
+SearchIdx
+    get list of indexes based on search criteria
+
+WalkCache: 
+    Iterates over cache file and calls callback func for each
+    block of data
+
+
+CreateIdxFromCache
+
+
+DefragCache: 
+    Builds a new cache and idx updating date to Now() 
+    and sorting blocks according to occupancies and optionally 
+    to value in AccoCode
+    
+
+GetJsonValuesFromRateBlock:
+    Use json as param and return param
+
+    
+SetJsonValuesInRateBlock
+
+
+BuildRateBlockFromJson
+
+
+## Web service for writing data to cache POST
+
+Accept filename as param
+
+InitCache
+
+Build new rate blocks from json
+
+Update rate blocks from json
+
+Restart readers
+
+## Web service for reading cache data GET and POST
+
+Requires filename as param
+    
