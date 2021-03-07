@@ -1,15 +1,10 @@
-//Package index provides an index for ratecache files, tools for
-//creating indexes from a cache files and saving indexes to disk
-
 package ratecache
 
 import (
-	"errors"
-	"os"
-
-	//"fmt"
 	"bytes"
 	"encoding/binary"
+	"errors"
+	"os"
 )
 
 // RoomOccIdx is one possible occupancy for a room or room rate.

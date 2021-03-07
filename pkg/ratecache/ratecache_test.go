@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-	//"io/ioutil"
 )
 
 const testfolder = "../../test/data"

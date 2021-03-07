@@ -48,9 +48,9 @@ func UnpackRate(buf []byte) (uint32, uint8) {
 // can occupy a room. One occupancy is made up of one or more
 // OccupancyItems.
 type OccupancyItem struct {
-	MinAge uint8
-	MaxAge uint8
-	Count  uint8
+	MinAge uint8 `json:"minAge"`
+	MaxAge uint8 `json:"maxAge"`
+	Count  uint8 `json:"count"`
 }
 
 // NewOccupancyItem returns a point to a new OccupancyItem object.
