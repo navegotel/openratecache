@@ -53,7 +53,7 @@ type OccupancyItem struct {
 	Count  uint8 `json:"count"`
 }
 
-// NewOccupancyItem returns a point to a new OccupancyItem object.
+// NewOccupancyItem returns a pointer to a new OccupancyItem object.
 func NewOccupancyItem(MinAge uint8, MaxAge uint8, Count uint8) (*OccupancyItem, error) {
 	if MinAge > MaxAge {
 		err := errors.New("MinAge cannot be greater than MaxAge")
