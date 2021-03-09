@@ -3,8 +3,15 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
+	"os"
+	"os/user"
+	"path/filepath"
 	"time"
 
 	"github.com/navegotel/openratecache/pkg/ratecache"
@@ -30,9 +37,9 @@ var airports = []string{"FRA", "MUC", "CGN", "DUS", "STR", "HHN", "LEJ", "BER", 
 var roomTypes = []string{"SGLSTAO", "SGLSTBR", "DBLBDAO", "DBLBDBR", "DBLSTAO", "DBLSTBR", "DBLSTHB",
 	"DBLDXAO", "DBLDXBR", "DBLDXHB", "DBLFRAO", "DBLFRHB", "DBLFRAO", "JUSUIAO", "JUSUIBR", "JUSUIHB"}
 
-func newAccoCode() string {
+func newAccoCode(i int) string {
 	airport := airports[rand.Intn(len(airports))]
-	code := fmt.Sprintf("%v%5d", airport, rand.Intn(99999))
+	code := fmt.Sprintf("%v%05d", airport, i)
 	return code
 }
 
@@ -42,9 +49,8 @@ func newRoomRateCode() string {
 	return roomRateCode
 }
 
-func newRoom() []ratecache.RoomRates {
+func newRoom(accoCode string) []ratecache.RoomRates {
 	var roomRates ratecache.RoomRates
-	accoCode := newAccoCode()
 	roomRateCode := newRoomRateCode()
 	roomRatesSlice := make([]ratecache.RoomRates, 0)
 	switch prefix := roomRateCode[:3]; prefix {
@@ -88,7 +94,6 @@ func newRoom() []ratecache.RoomRates {
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 4})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
 	}
-	fmt.Println(roomRatesSlice)
 	return roomRatesSlice
 }
 
@@ -112,6 +117,51 @@ func newRoomRates(roomRates *ratecache.RoomRates, startDate time.Time, maxLos in
 	}
 }
 
+func generateDemoData(accoCount int, folder string, maxLos int, days int) {
+	var accoCode string
+	var roomRates []ratecache.RoomRates
+	firstCheckIn := time.Now()
+	dirExists, _ := ratecache.DirExists(folder)
+	if dirExists == false {
+		os.MkdirAll(folder, os.ModePerm)
+	} else {
+		dirIsEmpty, _ := ratecache.DirIsEmpty(folder)
+		if dirIsEmpty == false {
+			log.Fatal("Specified output folder is not empty. Exiting.")
+		}
+
+	}
+	for i := 0; i <= accoCount; i++ {
+		accoCode = newAccoCode(i)
+		for j := 0; j < 5; j++ {
+			roomRates = newRoom(accoCode)
+			for k, roomRate := range roomRates {
+				newRoomRates(&roomRate, firstCheckIn, maxLos, days)
+				jstr, err := json.Marshal(roomRate)
+				if err != nil {
+					log.Fatal("Could not generate json")
+				}
+				filename := fmt.Sprintf("%v%05d%d%d.json", accoCode, i, j, k)
+				err = ioutil.WriteFile(filepath.Join(folder, filename), jstr, 0644)
+				if err != nil {
+					log.Fatal("could not write to file")
+				}
+			}
+		}
+	}
+}
+
 func main() {
 	rand.Seed(time.Now().Unix())
+	accoCount := flag.Int("n", 1000, "Number of accommodations to be generated")
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defaultFolder := filepath.Join(usr.HomeDir, "demodata")
+	folder := flag.String("o", defaultFolder, "The folder to which the demo data is going to be saved")
+	maxLos := flag.Int("l", 14, "MaxLos, the maximum length of stay for which rates are stored in the cache")
+	days := flag.Int("d", 360, "Days the number of check-in dates in the future for which rates are stored in the cache")
+	flag.Parse()
+	generateDemoData(*accoCount, *folder, *maxLos, *days)
 }
