@@ -59,14 +59,21 @@ type RoomRates struct {
 	AccoCode       string `json:"accommodationCode"`
 	RoomRateCode   string `json:"roomRateCode"`
 	Occupancy      []OccupancyItem
-	Rates          []DateRangeRate `json:"rates"`
-	Availabilities []DateRangeRate `json:"availabilities"`
+	Rates          []DateRangeRate  `json:"rates"`
+	Availabilities []DateRangeAvail `json:"availabilities"`
 }
 
-// AddRate adds a RateRangeValue to RoomRates.Rates.
+// AddRate adds a DateRangeRate to RoomRates.Rates.
 func (roomRates *RoomRates) AddRate(FirstCheckIn time.Time, LastCheckIn time.Time, LengthOfStay uint8, Rate float32) error {
-	drv := DateRangeRate{FirstCheckIn: JSONDate(FirstCheckIn), LastCheckIn: JSONDate(LastCheckIn), LengthOfStay: LengthOfStay, Rate: Rate}
-	roomRates.Rates = append(roomRates.Rates, drv)
+	drr := DateRangeRate{FirstCheckIn: JSONDate(FirstCheckIn), LastCheckIn: JSONDate(LastCheckIn), LengthOfStay: LengthOfStay, Rate: Rate}
+	roomRates.Rates = append(roomRates.Rates, drr)
+	return nil
+}
+
+// AddAvail adds a DateRangeAvail to RoomRates.Rates.
+func (roomRates *RoomRates) AddAvail(FirstCheckIn time.Time, LastCheckIn time.Time, LengthOfStay uint8, Available uint8) error {
+	dra := DateRangeAvail{FirstCheckIn: JSONDate(FirstCheckIn), LastCheckIn: JSONDate(LastCheckIn), LengthOfStay: LengthOfStay, Available: Available}
+	roomRates.Availabilities = append(roomRates.Availabilities, dra)
 	return nil
 }
 

@@ -102,13 +102,33 @@ func newRoomRates(roomRates *ratecache.RoomRates, startDate time.Time, maxLos in
 	dateSpan := 0
 	firstCheckIn := time.Time(startDate)
 	lastCheckIn := firstCheckIn.AddDate(0, 0, rand.Intn(12))
-	for los := 1; los < maxLos; los++ {
+	for los := 1; los <= maxLos; los++ {
 		i = 0
 		firstCheckIn = time.Time(startDate)
 		lastCheckIn = firstCheckIn.AddDate(0, 0, rand.Intn(12))
 		for i <= days {
 			dateSpan = rand.Intn(12)
 			roomRates.AddRate(firstCheckIn, lastCheckIn, uint8(los), float32(2500+rand.Intn(6500))/100*float32(los))
+			firstCheckIn = lastCheckIn.AddDate(0, 0, 1)
+			lastCheckIn = firstCheckIn.AddDate(0, 0, dateSpan)
+			i += dateSpan
+		}
+
+	}
+}
+
+func newRoomAvail(roomRates *ratecache.RoomRates, startDate time.Time, maxLos int, days int) {
+	i := 0
+	dateSpan := 0
+	firstCheckIn := time.Time(startDate)
+	lastCheckIn := firstCheckIn.AddDate(0, 0, rand.Intn(12))
+	for los := 1; los <= maxLos; los++ {
+		i = 0
+		firstCheckIn = time.Time(startDate)
+		lastCheckIn = firstCheckIn.AddDate(0, 0, rand.Intn(12))
+		for i <= days {
+			dateSpan = rand.Intn(12)
+			roomRates.AddAvail(firstCheckIn, lastCheckIn, uint8(los), uint8(rand.Intn(10)))
 			firstCheckIn = lastCheckIn.AddDate(0, 0, 1)
 			lastCheckIn = firstCheckIn.AddDate(0, 0, dateSpan)
 			i += dateSpan
@@ -137,6 +157,7 @@ func generateDemoData(accoCount int, folder string, maxLos int, days int) {
 			roomRates = newRoom(accoCode)
 			for k, roomRate := range roomRates {
 				newRoomRates(&roomRate, firstCheckIn, maxLos, days)
+				newRoomAvail(&roomRate, firstCheckIn, maxLos, days)
 				jstr, err := json.Marshal(roomRate)
 				if err != nil {
 					log.Fatal("Could not generate json")
