@@ -18,7 +18,6 @@ func (jd JSONDate) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON takes an ISO 8601 date string and returns a JSONDate object.
 func (jd *JSONDate) UnmarshalJSON(b []byte) error {
 	t, err := time.Parse("2006-01-02", strings.Trim(string(b), "\""))
-	fmt.Println(t)
 	if err != nil {
 		return err
 	}
