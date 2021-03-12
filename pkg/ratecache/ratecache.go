@@ -283,13 +283,15 @@ func CreateRateBlock(fhdr *FileHeader, rbhdr *RateBlockHeader) []byte {
 // InitRateFile creates a new rate file on disc and resets the rateBlockCount of
 // file header object. folder is the folder, where the file
 // is going to live.
-func InitRateFile(fhdr *FileHeader, folder string, blockCount int) (string, error) {
+func InitRateFile(fhdr *FileHeader, folder string, filename string, blockCount int) (string, error) {
 	fhdr.RateBlockCount = 0
 	byteStr := fhdr.ToByteStr()
 	rateBlockSize := fhdr.GetRateBlockSize()
 	emptyBlock := make([]byte, rateBlockSize)
 	t := time.Now()
-	filename := fhdr.Supplier + t.Format(".20060102150405") + ".bin"
+	if filename == "" {
+		filename = fhdr.Supplier + t.Format(".20060102150405") + ".bin"
+	}
 	f, err := os.OpenFile(filepath.Join(folder, filename), os.O_CREATE|os.O_APPEND|os.O_TRUNC|os.O_WRONLY, 0644)
 	defer f.Close()
 	if err != nil {

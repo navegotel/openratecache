@@ -128,7 +128,7 @@ func TestCreateRateBlock(t *testing.T) {
 
 func TestInitRateFile(t *testing.T) {
 	fhdr, _ := NewFileHeader("TEST", time.Date(2022, time.November, 25, 0, 0, 0, 0, time.UTC), "EUR", 14, 400, 32, 64)
-	filename, err := InitRateFile(fhdr, testfolder, 100)
+	filename, err := InitRateFile(fhdr, testfolder, "", 100)
 	if err != nil {
 		t.Error(err)
 	}
@@ -145,7 +145,7 @@ func TestAppendRateBlockToFile(t *testing.T) {
 	rbhdr.AddOccupancyItem(14, 17, 1)
 	rbhdr.AddOccupancyItem(18, 100, 2)
 	byteStr := CreateRateBlock(fhdr, rbhdr)
-	filename, _ := InitRateFile(fhdr, testfolder, 0)
+	filename, _ := InitRateFile(fhdr, testfolder, "", 0)
 	f, _ := os.OpenFile(filepath.Join(testfolder, filename), os.O_RDWR, 644)
 	defer f.Close()
 	defer os.Remove(filename)
@@ -166,7 +166,7 @@ func TestGetRateBlockStart(t *testing.T) {
 	rbhdr.AddOccupancyItem(14, 17, 1)
 	rbhdr.AddOccupancyItem(18, 100, 2)
 	byteStr := CreateRateBlock(fhdr, rbhdr)
-	filename, _ := InitRateFile(fhdr, testfolder, 0)
+	filename, _ := InitRateFile(fhdr, testfolder, "", 0)
 	f, _ := os.OpenFile(filename, os.O_RDWR, 644)
 	defer f.Close()
 	defer os.Remove(filename)
@@ -216,7 +216,7 @@ func TestSetGetRateInfo(t *testing.T) {
 	rbhdr.AddOccupancyItem(14, 17, 1)
 	rbhdr.AddOccupancyItem(18, 100, 2)
 	byteStr := CreateRateBlock(fhdr, rbhdr)
-	filename, _ := InitRateFile(fhdr, testfolder, 0)
+	filename, _ := InitRateFile(fhdr, testfolder, "", 0)
 	f, _ := os.OpenFile(filepath.Join(testfolder, filename), os.O_RDWR, 644)
 	defer f.Close()
 	defer os.Remove(filename)

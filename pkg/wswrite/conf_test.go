@@ -1,7 +1,6 @@
 package wswrite
 
 import (
-	"os"
 	"testing"
 )
 
@@ -14,6 +13,6 @@ func TestSettings(t *testing.T) {
 	if s.Port != 2511 {
 		t.Errorf("Expected value is 2511, got value %v", s.Port)
 	}
-	os.Remove("demo.conf")
+	//os.Remove("demo.conf")
 
 }

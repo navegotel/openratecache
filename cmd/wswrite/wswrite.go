@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/navegotel/openratecache/pkg/ratecache"
+	"github.com/navegotel/openratecache/pkg/wswrite"
 )
 
 func importHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,13 +37,12 @@ func main() {
 	} else {
 		configFilename = "/etc/openratecache.conf"
 	}
-	settings, err := LoadSettings((configFilename))
+	settings, err := wswrite.LoadSettings(configFilename)
 	if err != nil {
 		log.Fatal("Could not read settings file.")
 	}
 
-	fmt.Print(settings)
 	http.HandleFunc("/hello", helloHandler)
 	http.HandleFunc("/import", importHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", settings.Port), nil))
 }
