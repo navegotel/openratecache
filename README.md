@@ -1,3 +1,6 @@
+
+## openratecache is under development and not even ready for evaluation, let alone production! ##
+
 # openratecache
 Go implementation of the RateCache core.
 
