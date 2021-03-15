@@ -1,7 +1,6 @@
 package ratecache
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -91,7 +90,7 @@ func TestRateBlockHeaderFromByteStr(t *testing.T) {
 	byteStr := rbhdr.ToByteStr(32, 64)
 	rbhdr2, _ := RateBlockHeaderFromByteStr(byteStr, 32, 64)
 	if rbhdr2.accoCode != "ALC123" {
-		fmt.Println([]byte(rbhdr2.accoCode))
+		//fmt.Println([]byte(rbhdr2.accoCode))
 		t.Errorf("Value: %v, expected: ALC123", rbhdr.accoCode)
 	}
 }

@@ -1,6 +1,7 @@
 package ratecache
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strings"
 	"time"
@@ -21,7 +22,6 @@ func (jd *JSONDate) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-
 	*jd = JSONDate(t)
 	return nil
 }
@@ -35,6 +35,39 @@ type DateRangeRate struct {
 	Rate         float32  `json:"rate"`
 }
 
+// ExplodeRate returns the exploded rates as a uint32 slice and the offset
+// for the first rate in the room rate block. UNTESTED
+func (drr DateRangeRate) ExplodeRate(cacheDate time.Time, hdrSize int, days uint16) (uint16, []uint32) {
+	lastCheckIn := time.Time(drr.LastCheckIn)
+	firstCheckIn := time.Time(drr.FirstCheckIn)
+	length := int(lastCheckIn.Sub(firstCheckIn).Hours()/24) + 1
+	losBlockOffset := int(hdrSize) + (int(drr.LengthOfStay-1) * int(days) * 4)
+	dayOffset := int(firstCheckIn.Sub(cacheDate).Hours() / 24)
+	dayOffsetBytes := dayOffset * 4
+	offset := losBlockOffset + dayOffsetBytes
+	if int(dayOffset)+length > int(days) {
+		length -= (dayOffset + length - int(days))
+	}
+	b := make([]uint32, length)
+	for i := 0; i < length; i++ {
+		b[i] = uint32(drr.Rate * 100)
+	}
+	return uint16(offset), b
+}
+
+// ExplodeRateAsByteStr returns a byteStr that can be written
+// directly into the room rate block starting at offset. UNTESTED
+func (drr DateRangeRate) ExplodeRateAsByteStr(cacheDate time.Time, hdrSize int, days uint16) (uint16, []byte) {
+	offset, explodedRates := drr.ExplodeRate(cacheDate, hdrSize, days)
+	buf := make([]byte, 4)
+	byteStr := make([]byte, 0)
+	for _, rate := range explodedRates {
+		binary.BigEndian.PutUint32(buf, rate)
+		byteStr = append(byteStr, buf...)
+	}
+	return offset, byteStr
+}
+
 // DateRangeAvail represents the number of available
 // rooms for a range of check-in dates.
 type DateRangeAvail struct {
@@ -42,6 +75,26 @@ type DateRangeAvail struct {
 	LastCheckIn  JSONDate `json:"lastCheckIn"`
 	LengthOfStay uint8    `json:"lengthOfStay"`
 	Available    uint8    `json:"available"`
+}
+
+// ExplodeAvail is similar to ExplodeRates but returns
+// a slice with the availabilities instead of rates
+func (dra DateRangeAvail) ExplodeAvail(cacheDate time.Time, hdrSize int, days uint16) (uint16, []uint8) {
+	lastCheckIn := time.Time(dra.LastCheckIn)
+	firstCheckIn := time.Time(dra.FirstCheckIn)
+	length := int(lastCheckIn.Sub(firstCheckIn).Hours()/24) + 1
+	losBlockOffset := int(hdrSize) + (int(dra.LengthOfStay-1) * int(days) * 4)
+	dayOffset := int(firstCheckIn.Sub(cacheDate).Hours() / 24)
+	dayOffsetBytes := dayOffset * 4
+	offset := losBlockOffset + dayOffsetBytes
+	if int(dayOffset)+length > int(days) {
+		length -= (dayOffset + length - int(days))
+	}
+	b := make([]uint8, length)
+	for i := 0; i < length; i++ {
+		b[i] = dra.Available
+	}
+	return uint16(offset), b
 }
 
 // DateRate represents a rate or an availability
@@ -75,6 +128,10 @@ func (roomRates *RoomRates) AddAvail(FirstCheckIn time.Time, LastCheckIn time.Ti
 	roomRates.Availabilities = append(roomRates.Availabilities, dra)
 	return nil
 }
+
+//////////////////////////////////
+// Request and Response formats //
+//////////////////////////////////
 
 // AccoRoomRate represents one Accommodation and all possible.
 // RoomRates.

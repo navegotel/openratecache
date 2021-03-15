@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"os"
+	"sync"
 )
 
 // RoomOccIdx is one possible occupancy for a room or room rate.
@@ -40,36 +41,50 @@ func (roomOccIdx *RoomOccIdx) AddOccItem(MinAge uint8, MaxAge uint8, Count uint8
 	return nil
 }
 
-// InitIdx returns a nested map as used as cache index.
-func InitIdx() map[string]map[string][]RoomOccIdx {
-	m := make(map[string]map[string][]RoomOccIdx)
-	return m
+// CacheIndex contains a map with the nested map
+// and slice structure for the cache index,
+// protected by a mutex.
+type CacheIndex struct {
+	m map[string]map[string][]RoomOccIdx
+	sync.RWMutex
 }
 
-// AddRoomOccIdx adds the object to index map. Room is added if not exists,
-// accommodation is added if not exists.
-func AddRoomOccIdx(m map[string]map[string][]RoomOccIdx, AccoCode string, RoomRateCode string, roomOccIdx RoomOccIdx) {
-	_, ok := m[AccoCode]
+// NewCacheIndex returns a pointer to a new CacheIndex
+// instance. Returning a pointer is necessary because
+// returning a copy of a mutex is not safe.
+func NewCacheIndex() *CacheIndex {
+	idx := CacheIndex{}
+	idx.m = make(map[string]map[string][]RoomOccIdx)
+	return &idx
+}
+
+//AddRoomOccIdx adds a new RoomOccIdx to the index.
+func (idx *CacheIndex) AddRoomOccIdx(accoCode string, roomRateCode string, roomOccIdx RoomOccIdx) error {
+	idx.Lock()
+	_, ok := idx.m[accoCode]
 	if !ok {
-		m[AccoCode] = make(map[string][]RoomOccIdx)
+		idx.m[accoCode] = make(map[string][]RoomOccIdx)
 	}
-	m[AccoCode][RoomRateCode] = append(m[AccoCode][RoomRateCode], roomOccIdx)
+	idx.m[accoCode][roomRateCode] = append(idx.m[accoCode][roomRateCode], roomOccIdx)
+	idx.Unlock()
+	return nil
 }
 
-// SaveIdx saves index to file.
+// Save saves the whole index to a file.
 // Index format is:
 // - AccoCode (length as of FileHeader object)
 // - RoomCode (length as of FileHeader object)
 // - 8 Occupancy items (1 MinAge, 1 MaxAge, 1 Count)
 // - Index (uint16)
-func SaveIdx(m map[string]map[string][]RoomOccIdx, fhdr *FileHeader, filename string) error {
+func (idx *CacheIndex) Save(fhdr *FileHeader, filename string) error {
 	buf := make([]byte, fhdr.AccoCodeLength+fhdr.RoomRateCodeLength+FixIdxRecSize)
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	for accoCode, roomRateMap := range m {
+	idx.Lock()
+	for accoCode, roomRateMap := range idx.m {
 		for roomRateCode, occupancies := range roomRateMap {
 			for _, occupancy := range occupancies {
 				copy(buf[0:], []byte(accoCode))
@@ -79,45 +94,77 @@ func SaveIdx(m map[string]map[string][]RoomOccIdx, fhdr *FileHeader, filename st
 			}
 		}
 	}
+	idx.Unlock()
 	return nil
 }
 
-// ReadIdx reads a binary file from disk and builds a nested map
-// as index for the rate cache.
-func ReadIdx(fhdr *FileHeader, filename string) (map[string]map[string][]RoomOccIdx, error) {
-	m := InitIdx()
+// Load reads the cache index from a file.
+func (idx *CacheIndex) Load(fhdr *FileHeader, filename string) error {
 	f, err := os.OpenFile(filename, os.O_RDONLY, 644)
 	if err != nil {
-		return m, err
+		return err
 	}
 	defer f.Close()
 	recordSize := int64(fhdr.AccoCodeLength + fhdr.RoomRateCodeLength + FixIdxRecSize)
 	statInfo, err := f.Stat()
 	if err != nil {
-		return m, err
+		return err
 	}
 	fSize := statInfo.Size()
 	if fSize%recordSize != 0 {
-		return m, errors.New("Incorrect file size. File may be corrupt")
+		return errors.New("Incorrect file size. File may be corrupt")
 	}
 	buf := make([]byte, recordSize)
 	var accoCode string
 	var roomRateCode string
-	var idx uint16
+	var idxValue uint16
 	var roomOccIdx RoomOccIdx
 	recordCount := fSize / recordSize
 	for i := int64(0); i < recordCount; i++ {
 		f.ReadAt(buf, i*recordSize)
 		accoCode = string(bytes.Trim(buf[0:fhdr.AccoCodeLength], "\x00"))
 		roomRateCode = string(bytes.Trim(buf[fhdr.AccoCodeLength:fhdr.AccoCodeLength+fhdr.RoomRateCodeLength], "\x00"))
-		idx = binary.BigEndian.Uint16(buf[recordSize-2 : recordSize])
-		roomOccIdx = RoomOccIdx{Idx: idx}
+		idxValue = binary.BigEndian.Uint16(buf[recordSize-2 : recordSize])
+		roomOccIdx = RoomOccIdx{Idx: idxValue}
 		for j := int(fhdr.AccoCodeLength + fhdr.RoomRateCodeLength); j < int(recordSize-2); j += 3 {
 			if uint8(buf[j+2]) > 0 {
 				roomOccIdx.AddOccItem(uint8(buf[j]), uint8(buf[j+1]), uint8(buf[j+2]))
 			}
-			AddRoomOccIdx(m, accoCode, roomRateCode, roomOccIdx)
 		}
+		//no explicit Lock() required as AddRoomOccIdx will lock/unlock the map
+		idx.AddRoomOccIdx(accoCode, roomRateCode, roomOccIdx)
 	}
-	return m, nil
+	return nil
+}
+
+func (idx *CacheIndex) LoadFromCache(filename string) error {
+	f, err := os.OpenFile(filename, os.O_RDONLY, 644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	buf := make([]byte, FileHeaderSize)
+	f.Read(buf)
+	fhdr, err := FileHeaderFromByteStr(buf)
+	if err != nil {
+		return err
+	}
+	blockHeaderSize := fhdr.GetBlockHeaderSize()
+	hdrbuf := make([]byte, blockHeaderSize)
+	var accoCode string
+	var roomRateCode string
+	var roomOccIdx RoomOccIdx
+	for i := uint16(0); i < fhdr.RateBlockCount; i++ {
+		f.ReadAt(hdrbuf, fhdr.GetRateBlockStart(i))
+		accoCode = string(bytes.Trim(hdrbuf[0:fhdr.AccoCodeLength], "\x00"))
+		roomRateCode = string(bytes.Trim(hdrbuf[fhdr.AccoCodeLength:fhdr.AccoCodeLength+fhdr.RoomRateCodeLength], "\x00"))
+		roomOccIdx = RoomOccIdx{Idx: i}
+		for j := int(fhdr.AccoCodeLength + fhdr.RoomRateCodeLength); j < blockHeaderSize; j += 3 {
+			if uint8(hdrbuf[j+2]) > 0 {
+				roomOccIdx.AddOccItem(uint8(hdrbuf[j]), uint8(hdrbuf[j+1]), uint8(hdrbuf[j+2]))
+			}
+		}
+		idx.AddRoomOccIdx(accoCode, roomRateCode, roomOccIdx)
+	}
+	return nil
 }

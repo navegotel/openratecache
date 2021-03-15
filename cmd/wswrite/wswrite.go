@@ -1,48 +1,41 @@
 package main
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
-	"github.com/navegotel/openratecache/pkg/ratecache"
 	"github.com/navegotel/openratecache/pkg/wswrite"
 )
 
-func importHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method Not Allowed", 405)
-	}
-	rqBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Bad Request", 400)
-	}
-	var roomRates ratecache.RoomRates
-	json.Unmarshal(rqBody, &roomRates)
-	fmt.Println(len(roomRates.Rates))
-	fmt.Println(len(roomRates.Availabilities))
-}
-
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello\n")
-}
-
 func main() {
-	var configFilename string
-	if len(os.Args) == 2 {
-		configFilename = os.Args[1]
-	} else {
-		configFilename = "/etc/openratecache.conf"
-	}
+	clean := flag.Bool("clean", false, "starts with a clean cache")
+	flag.Parse()
+	configFilename := flag.Args()[0]
 	settings, err := wswrite.LoadSettings(configFilename)
 	if err != nil {
-		log.Fatal("Could not read settings file.")
+		log.Fatal(err)
+	}
+	log.Printf("Settings loaded from %v", configFilename)
+
+	if *clean == true {
+		os.Remove(filepath.Join(settings.CacheDir, settings.CacheFilename))
+		os.Remove(filepath.Join(settings.IndexDir, settings.CacheFilename+".idx"))
+	}
+	cachefile, idx, err := wswrite.LoadOrCreateCache(settings)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	http.HandleFunc("/hello", helloHandler)
-	http.HandleFunc("/import", importHandler)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", settings.Port), nil))
+	context, err := wswrite.NewHandlerContext(settings, cachefile, idx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.HandleFunc("/hello", context.HelloHandler)
+	http.HandleFunc("/import", context.ImportHandler)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", settings.Port), nil))
 }
