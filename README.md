@@ -36,7 +36,7 @@ Data is posted to
 http://your.url/import
 
 The format looks as follows:
-´´´
+```
 {
     "accommodationCode":"AAL00324",
     "roomRateCode":"DBLFRHB396",
@@ -82,7 +82,7 @@ The format looks as follows:
         ...
     ]
 }
-´´´
+```
 #### Codes ###
 The maximum length of the codes is configurable and can be up to 255 chars long. 
 Important char == byte! Keep this in mind if you use utf-8 and characters not in 8bit ascii, as
