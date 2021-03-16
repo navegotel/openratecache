@@ -7,7 +7,7 @@ const Signature = "LOSRATES"
 const Version = 8
 
 // FileHeaderSize is the size of the rate file header in bytes
-const FileHeaderSize = 35
+const FileHeaderSize = 37
 
 // FixBlockHeaderSize is the portion of the block header size
 // that does not chane, i.e. without room rate code and acco code

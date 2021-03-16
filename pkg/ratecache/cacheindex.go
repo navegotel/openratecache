@@ -4,26 +4,50 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 	"sync"
 )
+
+type IndexQuery struct {
+	AccoCode     string
+	RoomRateCode string
+	Occupancy    []OccupancyItem
+	OccTotal     uint8
+}
+
+// AddOccItem adds an Occupancy item, consisting of MinAge, MaxAge and Count to the
+// requested occupancy. This method should always be used as setter instead of
+// directly appending to the Occupancy attribute.
+func (indexQuery *IndexQuery) AddOccItem(MinAge uint8, MaxAge uint8, Count uint8) error {
+	if Count == 0 {
+		return errors.New("Count cannot be 0")
+	}
+	newItemP, err := NewOccupancyItem(MinAge, MaxAge, Count)
+	if err != nil {
+		return err
+	}
+	indexQuery.Occupancy = append(indexQuery.Occupancy, *newItemP)
+	indexQuery.OccTotal += Count
+	return nil
+}
 
 // RoomOccIdx is one possible occupancy for a room or room rate.
 // idx points to the rate block in the cache file.
 type RoomOccIdx struct {
 	Occupancy []OccupancyItem
 	Total     uint8
-	Idx       uint16
+	Idx       uint32
 }
 
 // ToByteStr returns a byte string representation of RoomOccIdx
 // which can be written to the rate cache.
 func (roomOccIdx *RoomOccIdx) ToByteStr() *[]byte {
-	buf := make([]byte, 26, 26)
+	buf := make([]byte, 28, 28)
 	for i, occItm := range roomOccIdx.Occupancy {
 		copy(buf[i*3:(i+1)*3], *occItm.ToByteStr())
 	}
-	binary.BigEndian.PutUint16(buf[24:], roomOccIdx.Idx)
+	binary.BigEndian.PutUint32(buf[24:], roomOccIdx.Idx)
 	return &buf
 }
 
@@ -117,14 +141,14 @@ func (idx *CacheIndex) Load(fhdr *FileHeader, filename string) error {
 	buf := make([]byte, recordSize)
 	var accoCode string
 	var roomRateCode string
-	var idxValue uint16
+	var idxValue uint32
 	var roomOccIdx RoomOccIdx
 	recordCount := fSize / recordSize
 	for i := int64(0); i < recordCount; i++ {
 		f.ReadAt(buf, i*recordSize)
 		accoCode = string(bytes.Trim(buf[0:fhdr.AccoCodeLength], "\x00"))
 		roomRateCode = string(bytes.Trim(buf[fhdr.AccoCodeLength:fhdr.AccoCodeLength+fhdr.RoomRateCodeLength], "\x00"))
-		idxValue = binary.BigEndian.Uint16(buf[recordSize-2 : recordSize])
+		idxValue = binary.BigEndian.Uint32(buf[recordSize-4 : recordSize])
 		roomOccIdx = RoomOccIdx{Idx: idxValue}
 		for j := int(fhdr.AccoCodeLength + fhdr.RoomRateCodeLength); j < int(recordSize-2); j += 3 {
 			if uint8(buf[j+2]) > 0 {
@@ -154,7 +178,7 @@ func (idx *CacheIndex) LoadFromCache(filename string) error {
 	var accoCode string
 	var roomRateCode string
 	var roomOccIdx RoomOccIdx
-	for i := uint16(0); i < fhdr.RateBlockCount; i++ {
+	for i := uint32(0); i < fhdr.RateBlockCount; i++ {
 		f.ReadAt(hdrbuf, fhdr.GetRateBlockStart(i))
 		accoCode = string(bytes.Trim(hdrbuf[0:fhdr.AccoCodeLength], "\x00"))
 		roomRateCode = string(bytes.Trim(hdrbuf[fhdr.AccoCodeLength:fhdr.AccoCodeLength+fhdr.RoomRateCodeLength], "\x00"))
@@ -167,4 +191,8 @@ func (idx *CacheIndex) LoadFromCache(filename string) error {
 		idx.AddRoomOccIdx(accoCode, roomRateCode, roomOccIdx)
 	}
 	return nil
+}
+
+func (idx *CacheIndex) GetOrCreate(q IndexQuery) {
+	fmt.Println("Hi")
 }

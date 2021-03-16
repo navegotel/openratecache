@@ -85,7 +85,7 @@ type FileHeader struct {
 	Days               uint16
 	AccoCodeLength     uint8
 	RoomRateCodeLength uint8
-	RateBlockCount     uint16
+	RateBlockCount     uint32
 }
 
 // NewFileHeader returns a pointer to a new FileHeader object.
@@ -121,7 +121,7 @@ func FileHeaderFromByteStr(byteStr []byte) (*FileHeader, error) {
 	fhdr.Days = binary.BigEndian.Uint16(byteStr[29:31])
 	fhdr.AccoCodeLength = uint8(byteStr[31])
 	fhdr.RoomRateCodeLength = uint8(byteStr[32])
-	fhdr.RateBlockCount = binary.BigEndian.Uint16(byteStr[33:35])
+	fhdr.RateBlockCount = binary.BigEndian.Uint32(byteStr[33:37])
 	return &fhdr, nil
 }
 
@@ -138,12 +138,12 @@ func (fhdr *FileHeader) GetRateBlockSize() int {
 }
 
 //GetRateBlockStart returns offset of rate block from its index. First block has index 0.
-func (fhdr *FileHeader) GetRateBlockStart(index uint16) int64 {
+func (fhdr *FileHeader) GetRateBlockStart(index uint32) int64 {
 	return int64(FileHeaderSize) + int64(fhdr.GetRateBlockSize())*int64(index)
 }
 
 // GetRatePos gets position of rate in rate cache
-func (fhdr *FileHeader) GetRatePos(idx uint16, date time.Time, los uint8) (int64, error) {
+func (fhdr *FileHeader) GetRatePos(idx uint32, date time.Time, los uint8) (int64, error) {
 	if fhdr.RateBlockCount == 0 {
 		return 0, errors.New("Rate cache is empty")
 	}
@@ -159,7 +159,7 @@ func (fhdr *FileHeader) GetRatePos(idx uint16, date time.Time, los uint8) (int64
 }
 
 // SetRateInfo writes one rate/avail to rate cache.
-func (fhdr *FileHeader) SetRateInfo(f *os.File, idx uint16, date time.Time, los uint8, rate uint32, avail uint8) error {
+func (fhdr *FileHeader) SetRateInfo(f *os.File, idx uint32, date time.Time, los uint8, rate uint32, avail uint8) error {
 	val := PackRate(rate, avail)
 	ratePos, err := fhdr.GetRatePos(idx, date, los)
 	if err != nil {
@@ -171,7 +171,7 @@ func (fhdr *FileHeader) SetRateInfo(f *os.File, idx uint16, date time.Time, los 
 }
 
 // GetRateInfo gets one rate/avail from rate cache.
-func (fhdr *FileHeader) GetRateInfo(f *os.File, idx uint16, date time.Time, los uint8) (uint32, uint8, error) {
+func (fhdr *FileHeader) GetRateInfo(f *os.File, idx uint32, date time.Time, los uint8) (uint32, uint8, error) {
 	ratePos, err := fhdr.GetRatePos(idx, date, los)
 	if err != nil {
 		return 0, 0, err
@@ -199,8 +199,8 @@ func (fhdr *FileHeader) ToByteStr() []byte {
 	byteStr = append(byteStr, daysStr...)
 	byteStr = append(byteStr, fhdr.AccoCodeLength)
 	byteStr = append(byteStr, fhdr.RoomRateCodeLength)
-	countStr := make([]byte, 2)
-	binary.BigEndian.PutUint16(countStr, fhdr.RateBlockCount)
+	countStr := make([]byte, 4)
+	binary.BigEndian.PutUint32(countStr, fhdr.RateBlockCount)
 	byteStr = append(byteStr, countStr...)
 	return byteStr
 }

@@ -68,3 +68,23 @@ func TestLoadFromCache(t *testing.T) {
 	idx2.LoadFromCache(filepath.Join(testfolder, filename))
 
 }
+
+func TestGetOrCreate(t *testing.T) {
+	idx := NewCacheIndex()
+	roomOccIdx := RoomOccIdx{Idx: 0}
+	roomOccIdx.AddOccItem(16, 100, 2)
+	idx.AddRoomOccIdx("ALC01", "DBL01", roomOccIdx)
+	idx.AddRoomOccIdx("ALC01", "DBL02", roomOccIdx)
+	roomOccIdx = RoomOccIdx{Idx: 1}
+	roomOccIdx.AddOccItem(3, 15, 1)
+	roomOccIdx.AddOccItem(16, 100, 1)
+	idx.AddRoomOccIdx("ALC001", "DBL01", roomOccIdx)
+	roomOccIdx = RoomOccIdx{Idx: 2}
+	roomOccIdx.AddOccItem(3, 15, 1)
+	roomOccIdx.AddOccItem(16, 100, 2)
+	idx.AddRoomOccIdx("ALC01", "DBL01", roomOccIdx)
+
+	q := IndexQuery{AccoCode: "ALC01", RoomRateCode: "DBL01"}
+	q.AddOccItem(16, 100, 2)
+	idx.GetOrCreate(q)
+}

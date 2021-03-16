@@ -36,8 +36,8 @@ func TestCreateFileHeader(t *testing.T) {
 func TestFileHeaderToByteStr(t *testing.T) {
 	fhdr, _ := NewFileHeader("TEST", time.Date(2022, time.November, 25, 0, 0, 0, 0, time.UTC), "EUR", 14, 400, 32, 64)
 	byteStr := fhdr.ToByteStr()
-	if len(byteStr) != 35 {
-		t.Errorf("Value: %v, expected: 35", len(byteStr))
+	if len(byteStr) != 37 {
+		t.Errorf("Value: %v, expected: 37", len(byteStr))
 	}
 }
 
@@ -173,8 +173,8 @@ func TestGetRateBlockStart(t *testing.T) {
 	if fhdr.GetRateBlockStart(0) != FileHeaderSize {
 		t.Errorf("Value: %v, expected: %v", fhdr.GetRateBlockStart(0), FileHeaderSize)
 	}
-	if fhdr.GetRateBlockStart(1) != 22555 {
-		t.Errorf("Value: %v, expected: %v", fhdr.GetRateBlockStart(1), 22555)
+	if fhdr.GetRateBlockStart(1) != 22557 {
+		t.Errorf("Value: %v, expected: %v", fhdr.GetRateBlockStart(1), 22557)
 	}
 }
 
