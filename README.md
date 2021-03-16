@@ -105,7 +105,7 @@ to define the occupancy. Make sure that age ranges do not overlap and you do not
 between ages either.
 
 Example:
-´´´
+```
 {
             "minAge":3,
             "maxAge":16,
@@ -116,7 +116,7 @@ Example:
             "maxAge":100,
             "count":2
         }
-´´´
+```
 The above example specifies that the rate applies for an occupancy with two guests between 3 and 16 years
 and two guests older than 17 (the maxAge is set to 100 because it needs to be set to something.)
 
@@ -125,14 +125,14 @@ and two guests older than 17 (the maxAge is set to 100 because it needs to be se
 Rates (prices) apply to a check-in date and a length of stay. If the rate for a specific los does not
 change for various consecutive check-in dates, conform one group that looks as follows:
 
-´´´
+```
 {
     "firstCheckIn":"2021-03-23",
     "lastCheckIn":"2021-03-24",
     "lengthOfStay":5,
     "rate":250.00
 }
-´´´
+```
 While in the closed source version every room rate may have a different currency and digits of currencies
 are taken into account, this implementation only accepts one currency for the whole cache. It also assumes
 that the currency has two digits.
