@@ -24,6 +24,9 @@ func main() {
 	if *clean == true {
 		os.Remove(filepath.Join(settings.CacheDir, settings.CacheFilename))
 		os.Remove(filepath.Join(settings.IndexDir, settings.CacheFilename+".idx"))
+		log.Printf("Files %v and %v removed from fs",
+			filepath.Join(settings.CacheDir, settings.CacheFilename),
+			filepath.Join(settings.IndexDir, settings.CacheFilename+".idx"))
 	}
 	cachefile, idx, err := wswrite.LoadOrCreateCache(settings)
 	if err != nil {

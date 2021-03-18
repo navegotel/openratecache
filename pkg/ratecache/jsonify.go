@@ -36,10 +36,19 @@ type DateRangeRate struct {
 }
 
 // ExplodeRate returns the exploded rates as a uint32 slice and the offset
-// for the first rate in the room rate block. UNTESTED
+// for the first rate in the room rate block. Check-in dates that are beyond
+// the valid scope of the cache, i.e. the configured check-in dates in the
+// future, will be cut off.
 func (drr DateRangeRate) ExplodeRate(cacheDate time.Time, hdrSize int, days uint16) (uint16, []uint32) {
 	lastCheckIn := time.Time(drr.LastCheckIn)
 	firstCheckIn := time.Time(drr.FirstCheckIn)
+	if firstCheckIn.Before(cacheDate) {
+		firstCheckIn = cacheDate
+	}
+	maxDate := cacheDate.Add(time.Hour * time.Duration(days) * 24)
+	if firstCheckIn.After(maxDate) {
+		return 0, make([]uint32, 0)
+	}
 	length := int(lastCheckIn.Sub(firstCheckIn).Hours()/24) + 1
 	losBlockOffset := int(hdrSize) + (int(drr.LengthOfStay-1) * int(days) * 4)
 	dayOffset := int(firstCheckIn.Sub(cacheDate).Hours() / 24)

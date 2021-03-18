@@ -2,6 +2,7 @@ package ratecache
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -49,5 +50,15 @@ func TestExplodeRate(t *testing.T) {
 	if len(b) != 6 {
 		t.Errorf("Value %d, expected: 6", len(b))
 	}
+}
 
+func TestNegativeSub(t *testing.T) {
+	firstCheckIn := time.Date(2022, time.November, 10, 0, 0, 0, 0, time.UTC)
+	lastCheckIn := time.Date(2022, time.November, 1, 0, 0, 0, 0, time.UTC)
+	fmt.Println(lastCheckIn.Sub(firstCheckIn).Hours() / 24)
+
+	testDate := time.Date(2022, time.November, 1, 0, 0, 0, 0, time.UTC)
+	daylapse := 3
+	testDate2 := testDate.Add(time.Hour * time.Duration(daylapse) * 24)
+	fmt.Println(testDate2)
 }

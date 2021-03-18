@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"os"
 	"sync"
 )
@@ -193,6 +192,37 @@ func (idx *CacheIndex) LoadFromCache(filename string) error {
 	return nil
 }
 
-func (idx *CacheIndex) GetOrCreate(q IndexQuery) {
-	fmt.Println("Hi")
+func cmpOccupancy(occ1 []OccupancyItem, occ2 []OccupancyItem) bool {
+	if len(occ1) != len(occ2) {
+		return false
+	}
+	for _, oi1 := range occ1 {
+		match := false
+		for _, oi2 := range occ2 {
+			if oi1.MinAge == oi2.MinAge && oi1.MaxAge == oi2.MaxAge && oi1.Count == oi2.Count {
+				match = true
+				break
+			}
+		}
+		if match == false {
+			return false
+		}
+	}
+	return true
+}
+
+func (idx *CacheIndex) Get(q IndexQuery) (uint32, bool) {
+	idx.Lock()
+	occupancies := idx.m[q.AccoCode][q.RoomRateCode]
+	for _, occupancy := range occupancies {
+		if occupancy.Total == q.OccTotal {
+			if cmpOccupancy(q.Occupancy, occupancy.Occupancy) == true {
+				index := occupancy.Idx
+				idx.Unlock()
+				return index, true
+			}
+		}
+	}
+	idx.Unlock()
+	return 0, false
 }

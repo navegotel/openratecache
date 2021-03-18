@@ -69,14 +69,14 @@ func TestLoadFromCache(t *testing.T) {
 
 }
 
-func TestGetOrCreate(t *testing.T) {
+func TestGet(t *testing.T) {
 	idx := NewCacheIndex()
 	roomOccIdx := RoomOccIdx{Idx: 0}
 	roomOccIdx.AddOccItem(16, 100, 2)
 	idx.AddRoomOccIdx("ALC01", "DBL01", roomOccIdx)
 	idx.AddRoomOccIdx("ALC01", "DBL02", roomOccIdx)
 	roomOccIdx = RoomOccIdx{Idx: 1}
-	roomOccIdx.AddOccItem(3, 15, 1)
+	roomOccIdx.AddOccItem(3, 15, 2)
 	roomOccIdx.AddOccItem(16, 100, 1)
 	idx.AddRoomOccIdx("ALC001", "DBL01", roomOccIdx)
 	roomOccIdx = RoomOccIdx{Idx: 2}
@@ -86,5 +86,34 @@ func TestGetOrCreate(t *testing.T) {
 
 	q := IndexQuery{AccoCode: "ALC01", RoomRateCode: "DBL01"}
 	q.AddOccItem(16, 100, 2)
-	idx.GetOrCreate(q)
+	q.AddOccItem(3, 15, 1)
+	idx.Get(q)
+	/*
+		index, success := idx.Get(q)
+		fmt.Println(index)
+		fmt.Println(success)
+	*/
+}
+
+func TestCmpOccupancy(t *testing.T) {
+	occ1 := make([]OccupancyItem, 3)
+	occ1[0] = OccupancyItem{MinAge: 0, MaxAge: 2, Count: 1}
+	occ1[1] = OccupancyItem{MinAge: 3, MaxAge: 14, Count: 1}
+	occ1[2] = OccupancyItem{MinAge: 15, MaxAge: 100, Count: 2}
+
+	occ2 := make([]OccupancyItem, 3)
+	occ2[0] = OccupancyItem{MinAge: 0, MaxAge: 2, Count: 1}
+	occ2[1] = OccupancyItem{MinAge: 3, MaxAge: 14, Count: 1}
+	occ2[2] = OccupancyItem{MinAge: 15, MaxAge: 100, Count: 2}
+
+	result := cmpOccupancy(occ1, occ2)
+
+	if result != true {
+		t.Error("cmpOccupancy returned false, expected true")
+	}
+	occ2[2] = OccupancyItem{MinAge: 15, MaxAge: 100, Count: 3}
+	result = cmpOccupancy(occ1, occ2)
+	if result != false {
+		t.Error("cmpOccupancy returned true, expected false")
+	}
 }

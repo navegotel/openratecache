@@ -145,7 +145,7 @@ if you are planning to use the cache with currencies that require more digits.
 
 #### available ####
 
-Availability is limited to 15. This may not be not enough to represent the whole allotment in your inventory
+Availability is limited to 15. This may not be enough to represent the whole allotment in your inventory
 system but it is more than ok for searches. Nobody will ever book more than three rooms over the internet
 for a sinlge party! Interpretation is up to you but recommended is:
 

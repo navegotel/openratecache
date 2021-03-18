@@ -319,11 +319,11 @@ func InitRateFile(fhdr *FileHeader, folder string, filename string, blockCount i
 // AddRateBlockToFile adds a rate block to cache file. The block position is determined by
 // the RateBlockCount. Method will return the index, not the count!
 // Do not forget to update the rateBlockCount on your FileHeader object!
-func AddRateBlockToFile(f *os.File, byteStr []byte) (uint16, error) {
+func AddRateBlockToFile(f *os.File, byteStr []byte) (uint32, error) {
 	var err error
-	buf := make([]byte, 2)
+	buf := make([]byte, 4)
 	f.ReadAt(buf, 33)
-	RateBlockCount := binary.BigEndian.Uint16(buf)
+	RateBlockCount := binary.BigEndian.Uint32(buf)
 	blockSize := len(byteStr)
 	_, err = f.WriteAt(byteStr, int64(FileHeaderSize+int(RateBlockCount)*blockSize))
 	if err != nil {
@@ -331,7 +331,7 @@ func AddRateBlockToFile(f *os.File, byteStr []byte) (uint16, error) {
 	}
 	f.Sync()
 	RateBlockCount++
-	binary.BigEndian.PutUint16(buf, RateBlockCount)
+	binary.BigEndian.PutUint32(buf, RateBlockCount)
 	_, err = f.WriteAt(buf, 33)
 	if err != nil {
 		return 0, err

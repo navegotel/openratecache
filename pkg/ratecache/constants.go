@@ -21,3 +21,6 @@ const FixIdxRecSize = 26
 // RateMask masks the upper 4 bytes of an uint32 which is used
 // to transport availability
 const RateMask uint32 = 268435455
+
+//AvailMask masks the lower 28 bits of an uint32
+const AvailMask uint32 = 4026531840
