@@ -81,6 +81,10 @@ func NewCacheIndex() *CacheIndex {
 	return &idx
 }
 
+func (idx *CacheIndex) GetAccoCount() int {
+	return len(idx.m)
+}
+
 //AddRoomOccIdx adds a new RoomOccIdx to the index.
 func (idx *CacheIndex) AddRoomOccIdx(accoCode string, roomRateCode string, roomOccIdx RoomOccIdx) error {
 	idx.Lock()
@@ -100,7 +104,8 @@ func (idx *CacheIndex) AddRoomOccIdx(accoCode string, roomRateCode string, roomO
 // - 8 Occupancy items (1 MinAge, 1 MaxAge, 1 Count)
 // - Index (uint16)
 func (idx *CacheIndex) Save(fhdr *FileHeader, filename string) error {
-	buf := make([]byte, fhdr.AccoCodeLength+fhdr.RoomRateCodeLength+FixIdxRecSize)
+	blockSize := fhdr.AccoCodeLength + fhdr.RoomRateCodeLength + FixIdxRecSize
+	buf := make([]byte, blockSize)
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -113,6 +118,7 @@ func (idx *CacheIndex) Save(fhdr *FileHeader, filename string) error {
 				copy(buf[0:], []byte(accoCode))
 				copy(buf[fhdr.AccoCodeLength:], []byte(roomRateCode))
 				copy(buf[fhdr.AccoCodeLength+fhdr.RoomRateCodeLength:], *occupancy.ToByteStr())
+				//copy(buf[blockSize-4:])
 				f.Write(buf)
 			}
 		}

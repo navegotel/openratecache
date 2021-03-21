@@ -1,8 +1,8 @@
 package ratecache
 
 import (
-	"encoding/binary"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 )
@@ -39,42 +39,32 @@ type DateRangeRate struct {
 // for the first rate in the room rate block. Check-in dates that are beyond
 // the valid scope of the cache, i.e. the configured check-in dates in the
 // future, will be cut off.
-func (drr DateRangeRate) ExplodeRate(cacheDate time.Time, hdrSize int, days uint16) (uint16, []uint32) {
+func (drr DateRangeRate) ExplodeRate(cacheDate time.Time, hdrSize int, days uint16, DecimalPlaces uint8) (int, []uint32) {
 	lastCheckIn := time.Time(drr.LastCheckIn)
 	firstCheckIn := time.Time(drr.FirstCheckIn)
+	maxCheckIn := cacheDate.AddDate(0, 0, int(days))
+	var rates []uint32
 	if firstCheckIn.Before(cacheDate) {
 		firstCheckIn = cacheDate
 	}
-	maxDate := cacheDate.Add(time.Hour * time.Duration(days) * 24)
-	if firstCheckIn.After(maxDate) {
-		return 0, make([]uint32, 0)
+	if lastCheckIn.Before(cacheDate) {
+		return 0, rates
 	}
-	length := int(lastCheckIn.Sub(firstCheckIn).Hours()/24) + 1
-	losBlockOffset := int(hdrSize) + (int(drr.LengthOfStay-1) * int(days) * 4)
-	dayOffset := int(firstCheckIn.Sub(cacheDate).Hours() / 24)
-	dayOffsetBytes := dayOffset * 4
-	offset := losBlockOffset + dayOffsetBytes
-	if int(dayOffset)+length > int(days) {
-		length -= (dayOffset + length - int(days))
+	if firstCheckIn.After(maxCheckIn) {
+		return 0, rates
 	}
-	b := make([]uint32, length)
+	if lastCheckIn.After(maxCheckIn) {
+		lastCheckIn = maxCheckIn
+	}
+	length := int(lastCheckIn.Sub(firstCheckIn).Hours()/24 + 1)
+	rates = make([]uint32, length)
 	for i := 0; i < length; i++ {
-		b[i] = uint32(drr.Rate * 100)
+		rates[i] = uint32(drr.Rate * float32(math.Pow10(int(DecimalPlaces))))
 	}
-	return uint16(offset), b
-}
-
-// ExplodeRateAsByteStr returns a byteStr that can be written
-// directly into the room rate block starting at offset. UNTESTED
-func (drr DateRangeRate) ExplodeRateAsByteStr(cacheDate time.Time, hdrSize int, days uint16) (uint16, []byte) {
-	offset, explodedRates := drr.ExplodeRate(cacheDate, hdrSize, days)
-	buf := make([]byte, 4)
-	byteStr := make([]byte, 0)
-	for _, rate := range explodedRates {
-		binary.BigEndian.PutUint32(buf, rate)
-		byteStr = append(byteStr, buf...)
-	}
-	return offset, byteStr
+	losBlockOffset := int(hdrSize) + (int(drr.LengthOfStay-1) * int(days) * 4)
+	dayOffset := int(firstCheckIn.Sub(cacheDate).Hours()/24) * 4
+	offset := losBlockOffset + dayOffset
+	return offset, rates
 }
 
 // DateRangeAvail represents the number of available
@@ -88,22 +78,37 @@ type DateRangeAvail struct {
 
 // ExplodeAvail is similar to ExplodeRates but returns
 // a slice with the availabilities instead of rates
-func (dra DateRangeAvail) ExplodeAvail(cacheDate time.Time, hdrSize int, days uint16) (uint16, []uint8) {
+func (dra *DateRangeAvail) ExplodeAvail(cacheDate time.Time, hdrSize int, days uint16) (int, []uint8) {
+	if dra.Available > 15 {
+		dra.Available = 15
+	}
 	lastCheckIn := time.Time(dra.LastCheckIn)
 	firstCheckIn := time.Time(dra.FirstCheckIn)
-	length := int(lastCheckIn.Sub(firstCheckIn).Hours()/24) + 1
-	losBlockOffset := int(hdrSize) + (int(dra.LengthOfStay-1) * int(days) * 4)
-	dayOffset := int(firstCheckIn.Sub(cacheDate).Hours() / 24)
-	dayOffsetBytes := dayOffset * 4
-	offset := losBlockOffset + dayOffsetBytes
-	if int(dayOffset)+length > int(days) {
-		length -= (dayOffset + length - int(days))
+	var avails []uint8
+	maxCheckIn := cacheDate.AddDate(0, 0, int(days))
+	// handle checkIn dates outside of cache scope
+	if firstCheckIn.Before(cacheDate) {
+		firstCheckIn = cacheDate
 	}
-	b := make([]uint8, length)
+	if lastCheckIn.Before(cacheDate) {
+		return 0, avails
+	}
+	if firstCheckIn.After(maxCheckIn) {
+		return 0, avails
+	}
+	if lastCheckIn.After(maxCheckIn) {
+		lastCheckIn = maxCheckIn
+	}
+	length := int(lastCheckIn.Sub(firstCheckIn).Hours()/24 + 1)
+	avails = make([]uint8, length)
 	for i := 0; i < length; i++ {
-		b[i] = dra.Available
+		avails[i] = dra.Available
 	}
-	return uint16(offset), b
+	//calculate offset inside block
+	losBlockOffset := int(hdrSize) + (int(dra.LengthOfStay-1) * int(days) * 4)
+	dayOffset := int(firstCheckIn.Sub(cacheDate).Hours()/24) * 4
+	offset := losBlockOffset + dayOffset
+	return offset, avails
 }
 
 // DateRate represents a rate or an availability
@@ -122,6 +127,20 @@ type RoomRates struct {
 	Occupancy      []OccupancyItem
 	Rates          []DateRangeRate  `json:"rates"`
 	Availabilities []DateRangeAvail `json:"availabilities"`
+}
+
+func (roomRates *RoomRates) Validate() []string {
+	var msg []string
+	if len(roomRates.AccoCode) == 0 {
+		msg = append(msg, "Missing AccoCode")
+	}
+	if len(roomRates.RoomRateCode) == 0 {
+		msg = append(msg, "Missing RoomRateCode")
+	}
+	if len(roomRates.Occupancy) == 0 {
+		msg = append(msg, "No Occupancy Specified")
+	}
+	return msg
 }
 
 // AddRate adds a DateRangeRate to RoomRates.Rates.

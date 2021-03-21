@@ -60,37 +60,41 @@ func newRoom(accoCode string) []ratecache.RoomRates {
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 18, MaxAge: 100, Count: 1})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
 	case "DBL":
-		roomRates.AccoCode = accoCode
-		roomRates.RoomRateCode = roomRateCode
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 3, MaxAge: 12, Count: 1})
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 13, MaxAge: 16, Count: 1})
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 2})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
-		roomRates.Occupancy = roomRates.Occupancy[:0]
+
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 13, MaxAge: 16, Count: 1})
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 2})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
-		roomRates.Occupancy = roomRates.Occupancy[:0]
+
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 3, MaxAge: 12, Count: 2})
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 2})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
-		roomRates.Occupancy = roomRates.Occupancy[:0]
+
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 2})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
 	case "JUS":
-		roomRates.AccoCode = accoCode
-		roomRates.RoomRateCode = roomRateCode
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 13, MaxAge: 16, Count: 1})
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 3})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
-		roomRates.Occupancy = roomRates.Occupancy[:0]
+
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 13, MaxAge: 16, Count: 2})
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 2})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
-		roomRates.Occupancy = roomRates.Occupancy[:0]
+
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 3})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
-		roomRates.Occupancy = roomRates.Occupancy[:0]
+
+		roomRates = ratecache.RoomRates{AccoCode: accoCode, RoomRateCode: roomRateCode}
 		roomRates.Occupancy = append(roomRates.Occupancy, ratecache.OccupancyItem{MinAge: 17, MaxAge: 100, Count: 4})
 		roomRatesSlice = append(roomRatesSlice, roomRates)
 	}

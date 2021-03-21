@@ -15,6 +15,7 @@ type Settings struct {
 	CacheFilename            string `json:"cacheFilename"`
 	Supplier                 string `json:"supplier"`
 	Currency                 string `json:"currency"`
+	DecimalPlaces            uint8  `json:"decimalPlaces"`
 	MaxLos                   uint8  `json:"maxLos"`
 	Days                     uint16 `json:"days"`
 	AccoCodeLength           uint8  `json:"accoCodeLength"`
@@ -46,6 +47,7 @@ func CreateInitialSettings(filename string) error {
 		CacheFilename:            "demo.bin",
 		Supplier:                 "DEMO",
 		Currency:                 "EUR",
+		DecimalPlaces:            2,
 		MaxLos:                   14,
 		Days:                     360,
 		AccoCodeLength:           32,

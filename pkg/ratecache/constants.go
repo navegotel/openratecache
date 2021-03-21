@@ -3,6 +3,9 @@ package ratecache
 // Signature is the signature string for rate files
 const Signature = "LOSRATES"
 
+// Release version of this Open RateCache implementation
+const Release = "1.0 Beta"
+
 // Version is the format version of the rate file
 const Version = 8
 
@@ -16,7 +19,7 @@ const FixBlockHeaderSize = 24
 // FixIdxRecSize is the portion of the record size in the
 // index file that does not change, i.e. without room rate code
 // and acco code.
-const FixIdxRecSize = 26
+const FixIdxRecSize = 28
 
 // RateMask masks the upper 4 bytes of an uint32 which is used
 // to transport availability

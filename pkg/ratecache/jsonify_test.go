@@ -31,7 +31,7 @@ func TestExplodeRate(t *testing.T) {
 		LengthOfStay: 3,
 		Rate:         250.00,
 	}
-	offset, b := dateRangeRate.ExplodeRate(cacheDate, headerSize, days)
+	offset, b := dateRangeRate.ExplodeRate(cacheDate, headerSize, days, 2)
 	if offset != 294 {
 		t.Errorf("Value %d, expected value 294", offset)
 	}
@@ -43,7 +43,7 @@ func TestExplodeRate(t *testing.T) {
 	dateRangeRate.FirstCheckIn = JSONDate(firstCheckIn)
 	dateRangeRate.LastCheckIn = JSONDate(lastCheckIn)
 	dateRangeRate.LengthOfStay = 1
-	offset, b = dateRangeRate.ExplodeRate(cacheDate, headerSize, days)
+	offset, b = dateRangeRate.ExplodeRate(cacheDate, headerSize, days, 2)
 	if offset != 146 {
 		t.Errorf("Value %d, expected value: 24", offset)
 	}

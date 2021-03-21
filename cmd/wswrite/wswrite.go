@@ -38,7 +38,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/hello", context.HelloHandler)
+	http.HandleFunc("/version", context.VersionHandler)
 	http.HandleFunc("/import", context.ImportHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", settings.Port), nil))
 }
