@@ -85,6 +85,33 @@ func (idx *CacheIndex) GetAccoCount() int {
 	return len(idx.m)
 }
 
+func (idx *CacheIndex) GetAccoList() []string {
+	idx.Lock()
+	l := make([]string, len(idx.m))
+	i := 0
+	for accoCode := range idx.m {
+		l[i] = accoCode
+		i++
+	}
+	idx.Unlock()
+	return l
+}
+
+func (idx *CacheIndex) GetAccommodation(AccoCode string) map[string][][]OccupancyItem {
+	rooms := make(map[string][][]OccupancyItem)
+	idx.Lock()
+	entries := idx.m[AccoCode]
+	for code, occupancies := range entries {
+		for _, occupancy := range occupancies {
+			var o []OccupancyItem
+			o = append(o, occupancy.Occupancy...)
+			rooms[code] = append(rooms[code], o)
+		}
+	}
+	idx.Unlock()
+	return rooms
+}
+
 //AddRoomOccIdx adds a new RoomOccIdx to the index.
 func (idx *CacheIndex) AddRoomOccIdx(accoCode string, roomRateCode string, roomOccIdx RoomOccIdx) error {
 	idx.Lock()

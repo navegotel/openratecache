@@ -39,7 +39,7 @@ func NewHandlerContext(settings Settings, cacheFile *os.File, idx *ratecache.Cac
 // ImportHandler imports data into the rate cache.
 func (context *HandlerContext) ImportHandler(w http.ResponseWriter, r *http.Request) {
 	var importInfo ImportInfo
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", 405)
 	}
 	rqBody, err := ioutil.ReadAll(r.Body)
