@@ -27,6 +27,8 @@ Most systems should be able to provide such a list. This type of filtering, e.g.
 
 ## Operation ##
 
+OpenRateCache is meant to run on 64bit Linux systems. If you are adventureous you can compile windows binaries and give it a try. But why would you want to do this? Life is too short to be wasted with running windows on servers.
+
 Except for GET which uses a normal query string, all other operations use json for both request and response. Make sure to use utf-8, especially when you are on Windows.
 
 ### Rate import format ###
@@ -254,6 +256,21 @@ Configuration is fairly simple. There are two web services:
 
 While it is safe to have multiple wssearch instances on the same cache it is not safe to have more than one wswrite instance. Rate import should
 be fast enough even with a single instance running.
+
+Set up should look as follows:
+```
+/opt/openratecache/wssearch
+/opt/openratecache/wswrite
+/etc/openratecache/wssearch.conf
+/etc/openratecache/wswrite.conf
+/var/local/openratecache/cache.bin.idx (the name depends on configuration)
+/mnt/openratecache/cache.bin
+
+```
+
+If you are happy to keep data on disk you may choose any other location. But if you really need to get the most out of it you 
+probably want to mnt a ram disk and keep the cache file there.
+
 
 ## FAQ ##
 
