@@ -246,10 +246,10 @@ The response looks as follows:
 
 Configuration is fairly simple. There are two web services:
 
-wswrite
+- wswrite
     accepts requests for loading rate and availability information into the cache.
 
-wssearch
+- wssearch
     Retrieves search results.
 
 While it is safe to have multiple wssearch instances on the same cache it is not safe to have more than one wswrite instance. Rate import should
