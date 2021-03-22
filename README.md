@@ -134,8 +134,8 @@ change for various consecutive check-in dates, conform one group that looks as f
 }
 ```
 While in the closed source version every room rate may have a different currency and digits of currencies
-are taken into account, this implementation only accepts one currency for the whole cache. It also assumes
-that the currency has two digits.
+are taken into account, this implementation only accepts one currency for the whole cache. The number of
+digits for the currency must be specified in the configuration files.
 
 This open source version is just a dumb cache, there is currently no possibility to plug in a mark-up engine
 as in the closed source version.
@@ -214,6 +214,46 @@ The response looks as follows:
         ]
 }
 ```
+
+#### Get version information ####
+
+The following url will retrieve version and some additional information on the 
+currently loaded cache:
+
+```
+http://localhost:2511/version
+```
+
+The response looks as follows:
+```
+{
+    "release":"1.0 Beta",
+    "formatVersion":8,
+    "cacheDate":"2021-03-21T00:00:00Z",
+    "accommodationCount":2,
+    "rateBlockCount":2,
+    "rateCount":10080
+}
+```
+ - `release` is the version number of the OpenRateCache.
+ - `formatVersion` is the version of the used ratecache data and file format.
+ - `cacheDate` is the reference date of the cache, usually the date on which the cache was initially loaded or defragged for the last time.
+ - `accommodationCount` is the number of accommodations that are loaded into the cache.
+ - `rateBlockCount` specifies the number of loaded combinations of room rates and occupancies.
+ - `rateCount` is the number of loaded rates (prices)
+
+## Configuration ##
+
+Configuration is fairly simple. There are two web services:
+
+wswrite
+    accepts requests for loading rate and availability information into the cache.
+
+wssearch
+    Retrieves search results.
+
+While it is safe to have multiple wssearch instances on the same cache it is not safe to have more than one wswrite instance. Rate import should
+be fast enough even with a single instance running.
 
 ## FAQ ##
 
