@@ -161,6 +161,60 @@ for a sinlge party! Interpretation is up to you but recommended is:
 
 ### Request format ###
 
+
+### Requesting listings and status information ###
+
+Only three requests support GET and both are mainly meant for health checks and debugging.
+Requesting this information does not make much sense in production as the requesting system
+is the one that had previously loaded this information into the cache and should be capable
+to deliver this information by itself.
+
+Response format is json.
+
+#### Listing accommodation codes ####
+
+```
+http://localhost:2511/list/accommodation
+```
+This will provide a complete list of all accommodation codes in the cache.
+
+```
+["ZRH00068","OST00081" ...]
+```
+#### Listing roomrate codes for a specific accommodation ###
+
+If you want to know what roomrates and occupancies are loaded into the cache you can use
+the following request:
+
+```
+http://localhost:2511/list/rooms/ZRH00068
+```
+
+`ZRH00068` is the accommodation code as loaded into the cache for which you want to 
+retrieve information.
+
+The response looks as follows:
+
+```
+{
+    "DBLFRAO171":
+        [
+            [
+                {
+                    "minAge":13,
+                    "maxAge":16,
+                    "count":1
+                },
+                {
+                    "minAge":17,
+                    "maxAge":100,
+                    "count":2
+                }
+            ]
+        ]
+}
+```
+
 ## FAQ ##
 
 ### Why not use a conventional RDBMS?
