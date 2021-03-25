@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -39,6 +40,39 @@ type RoomOccIdx struct {
 	Idx       uint32
 }
 
+// Match matches a specific group of guests, represented by
+// a slice of ages against a room occupancy and returns true
+// if the group matches the occupancy requirements.
+func (roomOccIdx *RoomOccIdx) Match(guests []uint8) bool {
+	if len(guests) != int(roomOccIdx.Total) {
+		return false
+	}
+	counters := make([]uint8, len(roomOccIdx.Occupancy))
+	for i, occItem := range roomOccIdx.Occupancy {
+		counters[i] = occItem.Count
+	}
+	for _, guest := range guests {
+		fit := false
+		for i, occItem := range roomOccIdx.Occupancy {
+			if counters[i] > 0 && guest >= occItem.MinAge && guest <= occItem.MaxAge {
+				fit = true
+				counters[i] -= 1
+				break
+			}
+		}
+		if fit == false {
+			return false
+		}
+	}
+	for _, count := range counters {
+		if count > 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
 // ToByteStr returns a byte string representation of RoomOccIdx
 // which can be written to the rate cache.
 func (roomOccIdx *RoomOccIdx) ToByteStr() *[]byte {
@@ -48,6 +82,23 @@ func (roomOccIdx *RoomOccIdx) ToByteStr() *[]byte {
 	}
 	binary.BigEndian.PutUint32(buf[24:], roomOccIdx.Idx)
 	return &buf
+}
+
+// AppendToIdxFile appends a new index entry to the index file
+// without having to re-write the whole index on disk
+func (roomOccIdx *RoomOccIdx) AppendToIdxFile(fhdr FileHeader, filename string, accoCode string, roomRateCode string) error {
+	blockSize := fhdr.AccoCodeLength + fhdr.RoomRateCodeLength + FixIdxRecSize
+	buf := make([]byte, blockSize)
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	copy(buf[0:], []byte(accoCode))
+	copy(buf[fhdr.AccoCodeLength:], []byte(roomRateCode))
+	copy(buf[fhdr.AccoCodeLength+fhdr.RoomRateCodeLength:], *roomOccIdx.ToByteStr())
+	f.Write(buf)
+	return nil
 }
 
 // AddOccItem adds one occupuncy item to the occupancy.
@@ -94,6 +145,7 @@ func (idx *CacheIndex) GetAccoList() []string {
 		i++
 	}
 	idx.Unlock()
+	sort.Strings(l)
 	return l
 }
 

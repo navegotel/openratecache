@@ -117,3 +117,24 @@ func TestCmpOccupancy(t *testing.T) {
 		t.Error("cmpOccupancy returned true, expected false")
 	}
 }
+
+func TestOccIdxMatch(t *testing.T) {
+	roomOccIdx := RoomOccIdx{Idx: 1}
+	roomOccIdx.AddOccItem(3, 14, 1)
+	roomOccIdx.AddOccItem(15, 100, 2)
+	guests := []uint8{18}
+	result := roomOccIdx.Match(guests)
+	if result == true {
+		t.Error("Expected false")
+	}
+	guests = []uint8{18, 24}
+	result = roomOccIdx.Match(guests)
+	if result == true {
+		t.Error("Expected false")
+	}
+	guests = []uint8{18, 24, 5}
+	result = roomOccIdx.Match(guests)
+	if result == false {
+		t.Error("Expected true")
+	}
+}

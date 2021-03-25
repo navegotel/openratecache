@@ -9,18 +9,20 @@ import (
 
 // Settings contains config settings for ws write.
 type Settings struct {
-	Port                     int    `json:"port"`
-	CacheDir                 string `json:"cacheDir"`
-	IndexDir                 string `json:"indexDir"`
-	CacheFilename            string `json:"cacheFilename"`
-	Supplier                 string `json:"supplier"`
-	Currency                 string `json:"currency"`
-	DecimalPlaces            uint8  `json:"decimalPlaces"`
-	MaxLos                   uint8  `json:"maxLos"`
-	Days                     uint16 `json:"days"`
-	AccoCodeLength           uint8  `json:"accoCodeLength"`
-	RoomRateCodeLength       uint8  `json:"roomRateCodeLength"`
-	InitialRateBlockCapacity int    `json:"initialRateBlockCapacity"`
+	Port                     int      `json:"port"`
+	CacheDir                 string   `json:"cacheDir"`
+	IndexDir                 string   `json:"indexDir"`
+	CacheFilename            string   `json:"cacheFilename"`
+	Supplier                 string   `json:"supplier"`
+	Currency                 string   `json:"currency"`
+	DecimalPlaces            uint8    `json:"decimalPlaces"`
+	MaxLos                   uint8    `json:"maxLos"`
+	Days                     uint16   `json:"days"`
+	AccoCodeLength           uint8    `json:"accoCodeLength"`
+	RoomRateCodeLength       uint8    `json:"roomRateCodeLength"`
+	InitialRateBlockCapacity int      `json:"initialRateBlockCapacity"`
+	AddIndexUrls             []string `json:"addIndexUrls"`
+	Notify                   bool     `json:"notify"`
 }
 
 // LoadSettings loads settings for ws write from a json file.

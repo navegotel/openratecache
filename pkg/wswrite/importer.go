@@ -1,8 +1,10 @@
 package wswrite
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"net/http"
 	"path/filepath"
 	"time"
 
@@ -13,6 +15,28 @@ type Stats struct {
 	RatesImported int
 	AvailImported int
 	ExecutionTime float64
+}
+
+type NewIdxNotification struct {
+	AccoCode     string
+	RoomRateCode string
+	RoomOccIdx   ratecache.RoomOccIdx
+}
+
+func notifyNewIdx(accoCode string, roomRateCode string, roomOccIdx ratecache.RoomOccIdx, urls []string) error {
+	nf := NewIdxNotification{AccoCode: accoCode, RoomRateCode: roomRateCode, RoomOccIdx: roomOccIdx}
+	jsonMsg, err := json.Marshal(nf)
+	if err != nil {
+		return err
+	}
+	msgBody := bytes.NewBuffer(jsonMsg)
+	for _, url := range urls {
+		_, err := http.Post(url, "application/json", msgBody)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ImportAriData(context *HandlerContext, data []byte) (Stats, []string, error) {
@@ -33,6 +57,9 @@ func ImportAriData(context *HandlerContext, data []byte) (Stats, []string, error
 	index, found := context.Idx.Get(q)
 	if found == false {
 		rbhdr, _ := ratecache.NewRateBlockHeader(roomRates.AccoCode, roomRates.RoomRateCode)
+		for _, occupancyItem := range roomRates.Occupancy {
+			rbhdr.AddOccupancyItem(occupancyItem.MinAge, occupancyItem.MaxAge, occupancyItem.Count)
+		}
 		byteStr := ratecache.CreateRateBlock(context.Fhdr, rbhdr)
 		var err error
 		index, err = ratecache.AddRateBlockToFile(context.CacheFile, byteStr)
@@ -45,7 +72,11 @@ func ImportAriData(context *HandlerContext, data []byte) (Stats, []string, error
 			roomOccIdx.AddOccItem(occupancyItem.MinAge, occupancyItem.MaxAge, occupancyItem.Count)
 		}
 		context.Idx.AddRoomOccIdx(q.AccoCode, q.RoomRateCode, roomOccIdx)
-		context.Idx.Save(context.Fhdr, filepath.Join(context.Settings.IndexDir, context.Settings.CacheFilename+".idx"))
+		roomOccIdx.AppendToIdxFile(*context.Fhdr, filepath.Join(context.Settings.IndexDir, context.Settings.CacheFilename+".idx"), q.AccoCode, q.RoomRateCode)
+		if context.Settings.Notify {
+			notifyNewIdx(roomRates.AccoCode, roomRates.RoomRateCode, roomOccIdx, context.Settings.AddIndexUrls)
+		}
+		//context.Idx.Save(context.Fhdr, filepath.Join(context.Settings.IndexDir, context.Settings.CacheFilename+".idx"))
 	}
 	// Import data into cache
 	importRates(context, &stats, index, roomRates.Rates)

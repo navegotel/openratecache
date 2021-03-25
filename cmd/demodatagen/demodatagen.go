@@ -3,14 +3,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
-	"os/user"
 	"path/filepath"
 	"time"
 
@@ -141,7 +142,7 @@ func newRoomAvail(roomRates *ratecache.RoomRates, startDate time.Time, maxLos in
 	}
 }
 
-func generateDemoData(accoCount int, folder string, maxLos int, days int) {
+func generateDemoData(accoCount int, folder string, url string, maxLos int, days int) {
 	var accoCode string
 	var roomRates []ratecache.RoomRates
 	firstCheckIn := time.Now()
@@ -166,10 +167,20 @@ func generateDemoData(accoCount int, folder string, maxLos int, days int) {
 				if err != nil {
 					log.Fatal("Could not generate json")
 				}
-				filename := fmt.Sprintf("%v%05d%d%d.json", accoCode, i, j, k)
-				err = ioutil.WriteFile(filepath.Join(folder, filename), jstr, 0644)
-				if err != nil {
-					log.Fatal("could not write to file")
+				if len(folder) > 0 {
+					filename := fmt.Sprintf("%v%05d%d%d.json", accoCode, i, j, k)
+					err = ioutil.WriteFile(filepath.Join(folder, filename), jstr, 0644)
+					if err != nil {
+						log.Fatal("could not write to file")
+					}
+				}
+				if len(url) > 0 {
+					msgBody := bytes.NewBuffer(jstr)
+					rsp, err := http.Post(url, "application/json", msgBody)
+					if err != nil {
+						log.Fatal(err)
+					}
+					rsp.Body.Close()
 				}
 			}
 		}
@@ -179,14 +190,20 @@ func generateDemoData(accoCount int, folder string, maxLos int, days int) {
 func main() {
 	rand.Seed(time.Now().Unix())
 	accoCount := flag.Int("n", 1000, "Number of accommodations to be generated")
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defaultFolder := filepath.Join(usr.HomeDir, "demodata")
-	folder := flag.String("o", defaultFolder, "The folder to which the demo data is going to be saved")
+	/*
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defaultFolder := filepath.Join(usr.HomeDir, "demodata")
+	*/
+	folder := flag.String("o", "", "The folder to which the demo data is going to be saved")
+	url := flag.String("u", "", "Url to which the generated data will be sent.")
 	maxLos := flag.Int("l", 14, "MaxLos, the maximum length of stay for which rates are stored in the cache")
 	days := flag.Int("d", 360, "Days the number of check-in dates in the future for which rates are stored in the cache")
 	flag.Parse()
-	generateDemoData(*accoCount, *folder, *maxLos, *days)
+	if len(*folder) == 0 && len(*url) == 0 {
+		log.Fatal("Either output folder or url must be specified")
+	}
+	generateDemoData(*accoCount, *folder, *url, *maxLos, *days)
 }

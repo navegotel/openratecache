@@ -17,13 +17,14 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("Settings loaded from %v", configFilename)
-	cachefile, idx, fhdr, err := wssearch.LoadCache(settings)
+	mp, idx, fhdr, err := wssearch.LoadCache(settings)
 	if err != nil {
 		log.Fatal(err)
 	}
-	context := wssearch.HandlerContext{Settings: settings, CacheFile: cachefile, Fhdr: fhdr, Idx: idx}
+	context := wssearch.HandlerContext{Settings: settings, Map: mp, Fhdr: fhdr, Idx: idx}
 
 	http.HandleFunc("/list/accommodation", context.AccoListHandler)
 	http.HandleFunc("/list/rooms/", context.RoomListHandler)
+	http.HandleFunc("/addindex", context.AddIndexHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", settings.Port), nil))
 }

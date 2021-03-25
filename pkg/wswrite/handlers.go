@@ -46,6 +46,7 @@ func (context *HandlerContext) ImportHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		http.Error(w, "Bad Request", 400)
 	}
+	defer r.Body.Close()
 	importInfo.Stats, importInfo.Errors, err = ImportAriData(context, rqBody)
 	if err != nil {
 		http.Error(w, "Bad Request", 400)
