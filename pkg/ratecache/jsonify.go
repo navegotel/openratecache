@@ -1,6 +1,7 @@
 package ratecache
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -23,6 +24,28 @@ func (jd *JSONDate) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*jd = JSONDate(t)
+	return nil
+}
+
+// Ages represents a specific occupancy (i.e. a specific group of guests)
+// as a slice of ages, e.g. [8, 40, 38] represents an eigth year old child
+// and two adults aged 40 and 38.
+type Ages []uint8
+
+func (ages Ages) MarshalJSON() ([]byte, error) {
+	intSl := make([]int, len(ages))
+	for i, age := range ages {
+		intSl[i] = int(age)
+	}
+	return json.Marshal(intSl)
+}
+
+func (ages *Ages) UnmarshalJSON(b []byte) error {
+	var intSl []int
+	json.Unmarshal(b, &intSl)
+	for _, val := range intSl {
+		*ages = append(*ages, uint8(val))
+	}
 	return nil
 }
 
@@ -164,30 +187,74 @@ func (roomRates *RoomRates) AddAvail(FirstCheckIn time.Time, LastCheckIn time.Ti
 // AccoRoomRate represents one Accommodation and all possible.
 // RoomRates.
 type AccoRoomRate struct {
-	AccoCode     string   `json:"accoCode"`
-	RoomRateCode []string `json:"roomRateCode"`
+	AccoCode      string   `json:"accoCode"`
+	RoomRateCodes []string `json:"roomRateCodes"`
 }
 
 // SearchRq transports a set of search parameters.
 type SearchRq struct {
-	CheckIn        JSONDate        `json:"checkIn"`
-	LengthOfStay   uint8           `json:"lengthOfStay"`
-	Occupancy      []OccupancyItem `json:"occupancy"`
-	Accommodations []AccoRoomRate  `json:"accommodations"`
+	CheckIn         JSONDate       `json:"checkIn"`
+	FirstCheckIn    JSONDate       `json:"firstCheckIn"`
+	LastCheckIn     JSONDate       `json:"lastCheckIn"`
+	LengthOfStay    uint8          `json:"lengthOfStay"`
+	MinLengthOfStay uint8          `json:"minLengthOfStay"`
+	MaxLengthOfStay uint8          `json:"maxLengthOfStay"`
+	Occupancy       Ages           `json:"occupancy"`
+	Accommodations  []AccoRoomRate `json:"accommodations"`
 }
 
-//SearchRsOption groups accommodation with rate info
-//for one specific combination of check-in and los.
-type SearchRsOption struct {
-	AccoCode     string  `json:"accoCode"`
+// Validate checks the request for valid entries and
+// returns a list of message strings each of which
+// represents a validation error. The error return
+// value does not refer to semantic validation errors!
+// In order to check, if the request is semantically
+// correct and can be processed check if first return
+// value == 0.
+// If CheckIn is set then First and Last are meant to be ignored;
+// if LengthOfStay is set then Min and Max are meant to be ignored.
+func (searchRq *SearchRq) Validate() ([]string, error) {
+	msgList := make([]string, 0)
+	if time.Time(searchRq.CheckIn).IsZero() {
+		if time.Time(searchRq.FirstCheckIn).IsZero() || time.Time(searchRq.LastCheckIn).IsZero() {
+			msgList = append(msgList, "Neither checkIn nor first and last CheckIn are set")
+		}
+		if time.Time(searchRq.FirstCheckIn).After(time.Time(searchRq.LastCheckIn)) {
+			msgList = append(msgList, "firstCheckIn cannot be after lastCheckIn")
+		}
+	}
+	if searchRq.LengthOfStay == 0 {
+		if searchRq.MinLengthOfStay == 0 || searchRq.MaxLengthOfStay == 0 {
+			msgList = append(msgList, "Neither lengthOfStay nor Min and Max LengthOfStay are set")
+		}
+		if searchRq.MinLengthOfStay > searchRq.MaxLengthOfStay {
+			msgList = append(msgList, "minLengthOfStay cannot be greater than maxLenghtOfStay")
+		}
+	}
+	if len(searchRq.Accommodations) == 0 {
+		msgList = append(msgList, "At least on accommodation is required")
+	}
+	return msgList, nil
+}
+
+// SearchRsRoomOption represents one room with
+// the corresponding rate and availability
+// for one specific los and stay
+type SearchRsRoomOption struct {
 	RoomRateCode string  `json:"roomRateCode"`
 	Rate         float64 `json:"rate"`
 	Availability uint8   `json:"availability"`
 }
 
+//SearchRsAccoOption groups accommodation with different
+// rooms for one specific combination of check-in and los.
+type SearchRsAccoOption struct {
+	AccoCode string `json:"accoCode"`
+	Rooms    []SearchRsRoomOption
+}
+
 // SearchRs transports a search result.
 type SearchRs struct {
-	CheckIn      JSONDate         `json:"checkIn"`
-	LengthOfStay uint8            `json:"lengthOfStay"`
-	Options      []SearchRsOption `json:"options"`
+	CheckIn      JSONDate             `json:"checkIn"`
+	LengthOfStay uint8                `json:"lengthOfStay"`
+	Options      []SearchRsAccoOption `json:"options"`
 }

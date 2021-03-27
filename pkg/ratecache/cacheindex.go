@@ -132,10 +132,58 @@ func NewCacheIndex() *CacheIndex {
 	return &idx
 }
 
+// RoomIdx is part of IdxResult and contains a
+// room rate code and the corresponding index
+// of the room rate block
+type RoomIdx struct {
+	RoomRateCode string
+	Index        uint32
+}
+
+// A slice of IdexResult is returned by "Find" as
+// a result to the search. This slice is used as
+// input to get the actual rate information from
+// the rate cache.
+type IdxResult struct {
+	AccoCode string
+	Rooms    []RoomIdx
+}
+
+func (idx *CacheIndex) Find(searchRq *SearchRq) []IdxResult {
+	var idxResults []IdxResult
+	for _, accommodation := range searchRq.Accommodations {
+		if len(accommodation.RoomRateCodes) == 0 {
+			idx.Lock()
+			for key, _ := range idx.m[accommodation.AccoCode] {
+				accommodation.RoomRateCodes = append(accommodation.RoomRateCodes, key)
+			}
+			idx.Unlock()
+		}
+		idxResult := IdxResult{AccoCode: accommodation.AccoCode}
+		for _, room := range accommodation.RoomRateCodes {
+			idx.Lock()
+			for _, roomOccIdx := range idx.m[accommodation.AccoCode][room] {
+				if roomOccIdx.Match(searchRq.Occupancy) {
+					roomIdx := RoomIdx{RoomRateCode: room, Index: roomOccIdx.Idx}
+					idxResult.Rooms = append(idxResult.Rooms, roomIdx)
+					break
+				}
+			}
+			idx.Unlock()
+		}
+		if len(idxResult.Rooms) > 0 {
+			idxResults = append(idxResults, idxResult)
+		}
+	}
+	return idxResults
+}
+
+// GetAccoCount returns the number of accommodations in the idx.
 func (idx *CacheIndex) GetAccoCount() int {
 	return len(idx.m)
 }
 
+// Get AccoList returns a slice of all accommodations in the idx.
 func (idx *CacheIndex) GetAccoList() []string {
 	idx.Lock()
 	l := make([]string, len(idx.m))
@@ -234,12 +282,13 @@ func (idx *CacheIndex) Load(fhdr *FileHeader, filename string) error {
 		roomRateCode = string(bytes.Trim(buf[fhdr.AccoCodeLength:fhdr.AccoCodeLength+fhdr.RoomRateCodeLength], "\x00"))
 		idxValue = binary.BigEndian.Uint32(buf[recordSize-4 : recordSize])
 		roomOccIdx = RoomOccIdx{Idx: idxValue}
-		for j := int(fhdr.AccoCodeLength + fhdr.RoomRateCodeLength); j < int(recordSize-2); j += 3 {
-			if uint8(buf[j+2]) > 0 {
-				roomOccIdx.AddOccItem(uint8(buf[j]), uint8(buf[j+1]), uint8(buf[j+2]))
+		for j := 0; j < 8; j++ {
+			offStart := int(fhdr.AccoCodeLength+fhdr.RoomRateCodeLength) + j*3
+			tripleBuf := buf[offStart : offStart+3]
+			if tripleBuf[2] > 0 {
+				roomOccIdx.AddOccItem(uint8(tripleBuf[0]), uint8(tripleBuf[1]), uint8(tripleBuf[2]))
 			}
 		}
-		//no explicit Lock() required as AddRoomOccIdx will lock/unlock the map
 		idx.AddRoomOccIdx(accoCode, roomRateCode, roomOccIdx)
 	}
 	return nil

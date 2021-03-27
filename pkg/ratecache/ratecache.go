@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"golang.org/x/exp/mmap"
 )
 
 // TimeToStr converts the Time object into a date string as used
@@ -178,6 +180,17 @@ func (fhdr *FileHeader) GetRateInfo(f *os.File, idx uint32, date time.Time, los 
 	}
 	buf := make([]byte, 4)
 	f.ReadAt(buf, ratePos)
+	rate, avail := UnpackRate(buf)
+	return rate, avail, nil
+}
+
+func (fhdr *FileHeader) GetRateInfoFromMap(m mmap.ReaderAt, idx uint32, date time.Time, los uint8) (uint32, uint8, error) {
+	ratePos, err := fhdr.GetRatePos(idx, date, los)
+	if err != nil {
+		return 0, 0, err
+	}
+	buf := make([]byte, 4)
+	m.ReadAt(buf, ratePos)
 	rate, avail := UnpackRate(buf)
 	return rate, avail, nil
 }

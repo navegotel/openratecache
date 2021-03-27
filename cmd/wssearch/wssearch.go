@@ -25,6 +25,7 @@ func main() {
 
 	http.HandleFunc("/list/accommodation", context.AccoListHandler)
 	http.HandleFunc("/list/rooms/", context.RoomListHandler)
+	http.HandleFunc("/find", context.FindHandler)
 	http.HandleFunc("/addindex", context.AddIndexHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", settings.Port), nil))
 }
