@@ -2,7 +2,7 @@
 
 ## Requirements ##
 OpenRateCache does not require a lot of resources if all you want to do 
-is play around for testing and integration. Any Linux common Linux distro
+is play around for testing and integration. Any common Linux distro
 for x86-64 will do.
 
 OpenRateCache contains two web services and does not come with rc.d 
