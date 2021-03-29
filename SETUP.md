@@ -110,6 +110,6 @@ for this purpose.
   to use the imported data the web services for search need to add this
   information to their own index (or re-load the idxe from disk) This parameter
   expects a list of urls to which the new index information is sent.
-  notify: you can switch off the notification of new index entries by setting
+- notify: you can switch off the notification of new index entries by setting
   this to false. 
   
