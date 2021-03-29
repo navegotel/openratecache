@@ -125,12 +125,12 @@ On Ubuntu server you can use apt install
 apt install supervisor
 ```
 
-You can now either add the following to your `/etc/supervisord/supervisord.conf` file or add a 
-openratecache.conf file in `/etc/supervisord/conf.d` 
+You can now either add the following to your `/etc/supervisor/supervisord.conf` file or add a 
+openratecache.conf file in `/etc/supervisor/conf.d` 
 
 ```
 [program:wswrite]
-command=/opt/openratecache/bin/wswrite /opt/openratecache/conf.wswrite
+command=/opt/openratecache/bin/wswrite /opt/openratecache/conf/wswrite.conf
 directory=/var/local/openratecache
 user=openratecache
 autostart=true
@@ -138,7 +138,7 @@ autorestart=true
 redirect_stderr=true
 
 [program:wssearch]
-command=/opt/openratecache/bin/wssearch /opt/openratecache/conf.wssearch
+command=/opt/openratecache/bin/wssearch /opt/openratecache/conf/wssearch.conf
 directory=/var/local/openratecache
 user=openratecache
 autostart=true
