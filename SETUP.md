@@ -145,3 +145,49 @@ autostart=true
 autorestart=true
 redirect_stderr=true
 ```
+
+After that you can either reload the config file with supervisorctl or restart the supervisord
+```
+service supervisor restart
+```
+
+Check that both services are running
+```
+sudo supervisorctl
+wssearch                         RUNNING   pid 61909, uptime 0:07:43
+wswrite                          RUNNING   pid 61910, uptime 0:07:43
+supervisor> exit
+```
+now finally open ports 2507 and 2511 to your local network and voilà, you have a running rate cache.
+
+### Generating fake rate data ###
+If you have just installed OpenRateCache for evaluation you probably do not have data yet 
+for feeding import. You can  generate some fake data with the demodatagen fake data generator:
+```
+/opt/openratecache/bin$ ./demodatagen -h
+Usage of ./demodatagen:
+  -d int
+    	Days the number of check-in dates in the future for which rates are stored in the cache (default 360)
+  -l int
+    	MaxLos, the maximum length of stay for which rates are stored in the cache (default 14)
+  -n int
+    	Number of accommodations to be generated (default 1000)
+  -o string
+    	The folder to which the demo data is going to be saved
+  -u string
+    	Url to which the generated data will be sent.
+```
+Switches -d should match `days` in the config file, -l should match `maxLos`.
+Maybe you want to have a look at the input data format, for this purpose you can use tho -o switch and
+then send some of the json files to the /import endpoint of the writer
+
+If you want to do some serious testing you may generate more data and send it directly to the /import endpoint
+without saving data to disk.
+
+## High performance setup ##
+If you really need a lot of performance you may mount a ramdisk and change the `cacheDir` setting in the conf files
+to this location. Make sure the ramdisk has enough space. By the time it comes to setting up a high-performance
+system you will have produced cache files on disk so you will have a rough idea of the required space for your data.
+
+
+
