@@ -178,11 +178,11 @@ Usage of ./demodatagen:
     	Url to which the generated data will be sent.
 ```
 Switches -d should match `days` in the config file, -l should match `maxLos`.
-Maybe you want to have a look at the input data format, for this purpose you can use tho -o switch and
+Maybe you want to have a look at the input data format, for this purpose you can use the -o switch and
 then send some of the json files to the /import endpoint of the writer
 
 If you want to do some serious testing you may generate more data and send it directly to the /import endpoint
-without saving data to disk.
+by using the -u switch without saving data to disk.
 
 ## High performance setup ##
 If you really need a lot of performance you may mount a ramdisk and change the `cacheDir` setting in the conf files
