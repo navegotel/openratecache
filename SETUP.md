@@ -60,6 +60,8 @@ Open /opt/conf/wswrite.conf. After editing make sure the file
 is still valid json. You might use an online json validator
 for this purpose.
 
+- Port for the writer is 2507, but can be set to any other 
+  unused port.
 - cacheDir: points to the directory where the cache file lives. 
   Set this to `/var/local/ratecache`
 - indexDir: points to the directory for the index file. 
@@ -113,3 +115,33 @@ for this purpose.
 - notify: you can switch off the notification of new index entries by setting
   this to false. 
   
+Open `/opt/openratecache/conf/wssearch.conf` and adjust settings. Parameter names
+and meanings are the same as for the writer.
+
+### Install Supervisor ###
+Refer to the documentation of your distribution for the installation of supervisor. 
+On Ubuntu server you can use apt install
+```
+apt install supervisor
+```
+
+You can now either add the following to your `/etc/supervisord/supervisord.conf` file or add a 
+openratecache.conf file in `/etc/supervisord/conf.d` 
+
+```
+[program:wswrite]
+command=/opt/openratecache/bin/wswrite /opt/openratecache/conf.wswrite
+directory=/var/local/openratecache
+user=openratecache
+autostart=true
+autorestart=true
+redirect_stderr=true
+
+[program:wssearch]
+command=/opt/openratecache/bin/wssearch /opt/openratecache/conf.wssearch
+directory=/var/local/openratecache
+user=openratecache
+autostart=true
+autorestart=true
+redirect_stderr=true
+```
