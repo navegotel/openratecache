@@ -89,7 +89,7 @@ The format looks as follows:
 The maximum length of the codes is configurable and can be up to 255 chars long. 
 Important char == byte! Keep this in mind if you use utf-8 and characters not in 8bit ascii, as
 these characters may occupy more than one byte! Apart from that it is entirely up to you how
-you compose them. It is up to you how you to parse and make sense of these codes.
+you compose them. It is up to you how to parse and make sense of these codes.
 #### accommodationCode ####
 
 Accommodation codes (aka hotel codes or contract codes) are strings that should uniquely identify the hotel contract
